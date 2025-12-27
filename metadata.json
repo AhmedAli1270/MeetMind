@@ -1,0 +1,5 @@
+{
+  "name": "MeetMind",
+  "description": "AI-powered meeting assistant that automatically generates summaries, extracts action items, and tracks decisions.",
+  "requestFramePermissions": []
+}
