@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Key, Sun, Moon, Trash2, Save, Check } from 'lucide-react';
+import { User, Sun, Moon, Trash2, Save, Check, Key } from 'lucide-react';
 
 interface SettingsProps {
   user: { name: string; email: string };
@@ -16,8 +16,9 @@ const Settings: React.FC<SettingsProps> = ({
 }) => {
   const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email);
-  const [key, setKey] = useState(apiKey);
+  const [localApiKey, setLocalApiKey] = useState(apiKey);
   const [isSaved, setIsSaved] = useState(false);
+  const [isKeySaved, setIsKeySaved] = useState(false);
 
   const handleSaveProfile = () => {
     onUpdateUser({ name, email });
@@ -26,16 +27,16 @@ const Settings: React.FC<SettingsProps> = ({
   };
 
   const handleSaveKey = () => {
-    onUpdateApiKey(key);
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 2000);
+    onUpdateApiKey(localApiKey);
+    setIsKeySaved(true);
+    setTimeout(() => setIsKeySaved(false), 2000);
   };
 
   return (
     <div className="max-w-2xl mx-auto animate-fade-in-up space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Settings</h1>
-        <p className="text-slate-500 dark:text-slate-400">Manage your account preferences and API configuration.</p>
+        <p className="text-slate-500 dark:text-slate-400">Manage your account preferences and integrations.</p>
       </div>
 
       {/* Profile Section */}
@@ -76,39 +77,31 @@ const Settings: React.FC<SettingsProps> = ({
 
       {/* API Key Section */}
       <section className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Key size={20} className="text-primary-500" /> API Configuration
-            </h2>
-            <p className="text-sm text-slate-500 mt-1">
-              Provide your Google Gemini API Key to enable meeting analysis.
-            </p>
-          </div>
-        </div>
-        
+        <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+          <Key size={20} className="text-amber-500" /> API Configuration
+        </h2>
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Google Gemini API Key</label>
-            <input 
-              type="password" 
-              value={key} 
-              onChange={(e) => setKey(e.target.value)}
-              placeholder="AIzaSy..."
-              className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none font-mono text-sm"
-            />
-             <p className="text-xs text-slate-500 mt-2">
-              Your key is stored locally in your browser and used only for requests to Google.
+            <div className="flex gap-2">
+              <input 
+                type="password" 
+                value={localApiKey} 
+                onChange={(e) => setLocalApiKey(e.target.value)}
+                placeholder="AIza..."
+                className="flex-1 px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none font-mono"
+              />
+               <button 
+                onClick={handleSaveKey}
+                className="px-4 py-2 bg-slate-900 dark:bg-slate-700 text-white rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors flex items-center gap-2"
+              >
+                {isKeySaved ? <Check size={16} /> : <Save size={16} />}
+                Save
+              </button>
+            </div>
+            <p className="text-xs text-slate-500 mt-2">
+              Your API key is stored locally in your browser and used directly to communicate with Google's servers.
             </p>
-          </div>
-          <div className="pt-2 flex justify-end">
-             <button 
-              onClick={handleSaveKey}
-              className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-md"
-            >
-              {isSaved ? <Check size={16} /> : <Save size={16} />}
-              Save Key
-            </button>
           </div>
         </div>
       </section>

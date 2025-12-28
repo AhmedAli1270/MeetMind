@@ -47,12 +47,12 @@ const NewMeeting: React.FC<NewMeetingProps> = ({ onSave, apiKey, isPro, meetingC
       setError("Please provide a title and meeting transcript.");
       return;
     }
-    
+
     if (!apiKey) {
-      setError("API Key is missing. Go to Settings to add your Google Gemini API Key.");
+      setError("API Key is missing. Please add your Google Gemini API Key in Settings.");
       return;
     }
-
+    
     setStep('analyzing');
     setError(null);
 

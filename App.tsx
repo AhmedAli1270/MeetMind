@@ -33,7 +33,7 @@ export interface Meeting {
 }
 
 interface UserSettings {
-  apiKey: string;
+  apiKey: string; 
   theme: 'light' | 'dark';
 }
 
@@ -47,10 +47,12 @@ function App() {
   
   const [activeTab, setActiveTab] = useState('dashboard');
   const [meetings, setMeetings] = useState<Meeting[]>([]);
+  
   const [settings, setSettings] = useState<UserSettings>({
-    apiKey: '',
+    apiKey: import.meta.env?.VITE_GEMINI_API_KEY || '', 
     theme: 'light',
   });
+  
   const [darkMode, setDarkMode] = useState(false);
   
   // Payment Flow State
@@ -60,21 +62,26 @@ function App() {
   // Landing Page Intersection Observer
   const { ref: ctaRef, isVisible: ctaVisible } = useIntersectionObserver();
 
-  // 1. Initialization: Check Session & Load Data
+  // 1. Initialization
   useEffect(() => {
-    // Check if user is logged in
     const user = getCurrentSession();
     if (user) {
       setCurrentUser(user);
       setCurrentView('dashboard');
     }
 
-    // Load Local Data
     const storedMeetings = localStorage.getItem('meetmind_meetings');
     if (storedMeetings) setMeetings(JSON.parse(storedMeetings));
 
+    // Restore settings but preserve Env Key if local is empty
     const storedSettings = localStorage.getItem('meetmind_settings');
-    if (storedSettings) setSettings(JSON.parse(storedSettings));
+    if (storedSettings) {
+        const parsed = JSON.parse(storedSettings);
+        if (!parsed.apiKey && import.meta.env?.VITE_GEMINI_API_KEY) {
+            parsed.apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+        }
+        setSettings(parsed);
+    }
 
     const isDark = localStorage.getItem('darkMode') === 'true' || 
       (!('darkMode' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -123,8 +130,6 @@ function App() {
     logout();
     setCurrentUser(null);
     setCurrentView('landing');
-    // Optional: Clear meeting data from state if you want to ensure privacy on shared devices
-    // setMeetings([]); 
   };
 
   // --- Dashboard Handlers ---
@@ -144,9 +149,10 @@ function App() {
 
   const handleClearData = () => {
     setMeetings([]);
-    setSettings(prev => ({ ...prev, apiKey: '' }));
+    // Restore Env Key on clear
+    setSettings(prev => ({ ...prev, apiKey: import.meta.env?.VITE_GEMINI_API_KEY || '' }));
     localStorage.removeItem('meetmind_meetings');
-    handleLogout(); // Force logout on data clear
+    handleLogout(); 
   };
 
   const handleUpgradeClick = (planName: string = 'Pro', price: string = '$15') => {
@@ -160,7 +166,6 @@ function App() {
         ...currentUser,
         plan: selectedPlan.name.toLowerCase() === 'team' ? 'team' : 'pro'
       };
-      // Update local storage for auth (hacky MVP update)
       const users = JSON.parse(localStorage.getItem('meetmind_users') || '[]');
       const newUsers = users.map((u: UserAccount) => u.id === updatedUser.id ? updatedUser : u);
       localStorage.setItem('meetmind_users', JSON.stringify(newUsers));
@@ -172,58 +177,33 @@ function App() {
   };
 
   // ------------------------------------------------------------------
-  // RENDER: Auth Page
+  // RENDER SECTIONS
   // ------------------------------------------------------------------
+  
   if (currentView === 'auth') {
-    return (
-      <AuthPage 
-        onLoginSuccess={handleLoginSuccess}
-        onCancel={() => setCurrentView('landing')}
-      />
-    );
+    return <AuthPage onLoginSuccess={handleLoginSuccess} onCancel={() => setCurrentView('landing')} />;
   }
 
-  // ------------------------------------------------------------------
-  // RENDER: Landing Page
-  // ------------------------------------------------------------------
   if (currentView === 'landing') {
     return (
       <div className="min-h-screen flex flex-col overflow-hidden">
-        <Navbar 
-          darkMode={darkMode} 
-          toggleDarkMode={toggleDarkMode} 
-          onOpenAuth={handleStartAuth} 
-        />
+        <Navbar darkMode={darkMode} toggleDarkMode={toggleDarkMode} onOpenAuth={handleStartAuth} />
         <main className="flex-grow">
-          {/* Override Hero button to trigger Auth */}
-          <div onClick={(e) => {
-            // Very hacky way to intercept clicks on buttons inside Hero without rewriting Hero
-            // Ideally pass a prop to Hero
-            const target = e.target as HTMLElement;
-            if (target.closest('button')) handleStartAuth();
-          }}>
+          <div onClick={(e) => { const target = e.target as HTMLElement; if (target.closest('button')) handleStartAuth(); }}>
              <Hero />
           </div>
           <Features />
           <HowItWorks />
           <Pricing />
           <FAQ />
-          
           <section ref={ctaRef} className="py-20 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-primary-600 to-secondary-700 opacity-90 dark:opacity-80 z-0"></div>
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 z-0"></div>
             <div className="container mx-auto px-4 relative z-10 text-center">
               <div className={`transition-all duration-700 transform ${ctaVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-                <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 tracking-tight">
-                  Ready to transform your meetings?
-                </h2>
+                <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 tracking-tight">Ready to transform your meetings?</h2>
                 <div className="flex flex-col sm:flex-row justify-center gap-4">
-                  <button 
-                    onClick={handleStartAuth}
-                    className="px-8 py-4 bg-white text-primary-600 font-bold rounded-full hover:bg-blue-50 transition-all transform hover:scale-105 shadow-xl text-lg"
-                  >
-                    Start Your Free Trial
-                  </button>
+                  <button onClick={handleStartAuth} className="px-8 py-4 bg-white text-primary-600 font-bold rounded-full hover:bg-blue-50 transition-all transform hover:scale-105 shadow-xl text-lg">Start Your Free Trial</button>
                 </div>
               </div>
             </div>
@@ -234,52 +214,22 @@ function App() {
     );
   }
 
-  // ------------------------------------------------------------------
-  // RENDER: Dashboard (App Product)
-  // ------------------------------------------------------------------
   const isPro = currentUser?.plan !== 'free';
 
   return (
     <>
-      {showOnboarding && currentUser && (
-        <OnboardingModal 
-          userName={currentUser.name} 
-          onComplete={() => setShowOnboarding(false)} 
-        />
-      )}
-
-      {paymentModalOpen && selectedPlan && (
-        <PaymentModal 
-          plan={selectedPlan.name}
-          price={selectedPlan.price}
-          onClose={() => setPaymentModalOpen(false)}
-          onSuccess={handlePaymentSuccess}
-        />
-      )}
+      {showOnboarding && currentUser && <OnboardingModal userName={currentUser.name} onComplete={() => setShowOnboarding(false)} />}
+      {paymentModalOpen && selectedPlan && <PaymentModal plan={selectedPlan.name} price={selectedPlan.price} onClose={() => setPaymentModalOpen(false)} onSuccess={handlePaymentSuccess} />}
       
-      <Layout 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab}
-        user={{ name: currentUser?.name || 'User', email: currentUser?.email || '' }}
-        isPro={isPro} 
-        onLogout={handleLogout}
-        onUpgradeClick={() => { setActiveTab('subscription'); }}
-      >
+      <Layout activeTab={activeTab} setActiveTab={setActiveTab} user={{ name: currentUser?.name || 'User', email: currentUser?.email || '' }} isPro={isPro} onLogout={handleLogout} onUpgradeClick={() => { setActiveTab('subscription'); }}>
         {activeTab === 'dashboard' && (
-          <DashboardHome 
-            meetings={meetings} 
-            onNewMeeting={() => setActiveTab('new-meeting')}
-            onViewMeeting={(meeting) => {
-               setActiveTab('history');
-            }}
-            userName={currentUser?.name || 'User'}
-          />
+          <DashboardHome meetings={meetings} onNewMeeting={() => setActiveTab('new-meeting')} onViewMeeting={() => setActiveTab('history')} userName={currentUser?.name || 'User'} />
         )}
         
         {activeTab === 'new-meeting' && (
           <NewMeeting 
             onSave={handleSaveMeeting} 
-            apiKey={settings.apiKey}
+            apiKey={settings.apiKey} 
             isPro={isPro}
             meetingCount={meetings.length}
             onUpgradeClick={() => setActiveTab('subscription')}
@@ -287,36 +237,23 @@ function App() {
         )}
         
         {activeTab === 'history' && (
-          <History 
-            meetings={meetings}
-            onViewMeeting={(m) => {
-              alert(`Summary for ${m.title}:\n\n${m.summary}`);
-            }}
-            onDeleteMeeting={handleDeleteMeeting}
-          />
+          <History meetings={meetings} onViewMeeting={(m) => alert(`Summary for ${m.title}:\n\n${m.summary}`)} onDeleteMeeting={handleDeleteMeeting} />
         )}
 
         {activeTab === 'analytics' && (
-          <Analytics 
-            meetings={meetings}
-            isPro={isPro}
-            onUpgradeClick={() => setActiveTab('subscription')}
-          />
+          <Analytics meetings={meetings} isPro={isPro} onUpgradeClick={() => setActiveTab('subscription')} />
         )}
 
         {activeTab === 'subscription' && (
-          <Subscription 
-            currentPlan={currentUser?.plan || 'free'}
-            onUpgrade={handleUpgradeClick}
-          />
+          <Subscription currentPlan={currentUser?.plan || 'free'} onUpgrade={handleUpgradeClick} />
         )}
         
         {activeTab === 'settings' && (
           <Settings 
             user={{ name: currentUser?.name || '', email: currentUser?.email || '' }}
-            onUpdateUser={() => {}} // User update not implemented in auth MVP
-            apiKey={settings.apiKey}
-            onUpdateApiKey={handleUpdateApiKey}
+            onUpdateUser={() => {}} 
+            apiKey={settings.apiKey} 
+            onUpdateApiKey={handleUpdateApiKey} 
             onClearData={handleClearData}
             darkMode={darkMode}
             toggleDarkMode={toggleDarkMode}

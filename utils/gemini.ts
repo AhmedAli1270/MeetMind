@@ -12,10 +12,9 @@ export interface AnalysisResult {
 }
 
 export const analyzeMeetingText = async (
-  text: string, 
+  text: string,
   apiKey: string
 ): Promise<AnalysisResult> => {
-  // Use the provided key or fall back to env var (though env var likely empty in this context, good for structure)
   const key = apiKey || process.env.API_KEY || "";
   
   if (!key) {
@@ -26,7 +25,7 @@ export const analyzeMeetingText = async (
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-preview-09-2025', // High speed, good reasoning
+      model: 'gemini-3-flash-preview',
       contents: `Analyze this meeting transcript and extract: 
       1) A concise summary (2-3 sentences)
       2) Key decisions made (bullet points)
