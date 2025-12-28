@@ -21,12 +21,12 @@ const Analytics: React.FC<AnalyticsProps> = ({ meetings, isPro, onUpgradeClick }
   // Calculate average duration (estimate based on transcript length)
   // Assuming 150 words per minute
   const avgDurationMinutes = totalMeetings > 0 
-    ? Math.round(meetings.reduce((acc, m) => acc + (m.transcript.split(' ').length / 150), 0) / totalMeetings)
+    ? Math.round(meetings.reduce((acc: number, m) => acc + (m.transcript.split(' ').length / 150), 0) / totalMeetings)
     : 0;
 
   // Action Items
-  const totalActionItems = meetings.reduce((acc, m) => acc + m.actionItems.length, 0);
-  const completedActionItems = meetings.reduce((acc, m) => acc + m.actionItems.filter(i => i.completed).length, 0);
+  const totalActionItems = meetings.reduce((acc: number, m) => acc + m.actionItems.length, 0);
+  const completedActionItems = meetings.reduce((acc: number, m) => acc + m.actionItems.filter(i => i.completed).length, 0);
   const completionRate = totalActionItems > 0 ? Math.round((completedActionItems / totalActionItems) * 100) : 0;
 
   // Topics Frequency
